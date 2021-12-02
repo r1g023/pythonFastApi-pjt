@@ -1,15 +1,8 @@
-from fastapi import FastAPI, Path
+from fastapi import FastAPI, Path, Query, HTTPException, status
 from typing import Optional
 from pydantic import BaseModel
 
 server = FastAPI()
-
-
-class Item(BaseModel):
-    name: str
-    price: float
-    brand: Optional[str] = None
-
 
 inventory = {
     1: {"name": "Milk", "price": 3.99, "brand": "Regular"},
@@ -18,9 +11,22 @@ inventory = {
 }
 
 
+class Item(BaseModel):
+    name: str
+    price: float
+    brand: Optional[str] = None
+
+
+class UpdateItem(BaseModel):
+    name: Optional[str] = None
+    price: Optional[float] = None
+    brand: Optional[str] = None
+
+
 @server.get("/")
 def home():
-    return inventory
+    if inventory:
+        return inventory
 
 
 @server.get("/about")
@@ -34,17 +40,36 @@ def get_item(item_id: int = Path(None, description="The ID of the item youd like
 
 
 @server.get("/get-by-name/{item_id}")
-def get_item(*, item_id: int, name: Optional[str] = None, test: int):
+def get_item(*, name: Optional[str] = None):
     for item_id in inventory:
         if inventory[item_id]["name"] == name:
             return inventory[item_id]
-    return {"Data": "Not found"}
+    raise HTTPException(status_code=405, detail="item")
 
 
 @server.post("/create-item/{item_id}")
 def create_item(item_id: int, item: Item):
     if item_id in inventory:
-        return {"error": "Item ID already exists"}
+        raise HTTPException(status_code=404, detail="ID already exists in the database")
 
-    inventory[item_id] = {"name": item.name, "brand": item.brand, "price": item.price}
+    inventory[item_id] = item
     return inventory[item_id]
+
+
+@server.put("/update-item/{item_id}")
+def update_item(item_id: int, item: UpdateItem):
+    if item_id not in inventory:
+        raise HTTPException(status_code=404, detail="ID DOES NOT exist in the database")
+
+    inventory[item_id] = item
+
+    return inventory[item_id]
+
+
+@server.delete("/delete-item")
+def delete_item(item_id: int = Query(..., description="The id of item to delete", ge=0)):
+    if item_id not in inventory:
+        return {"Error": "id does not exist"}
+
+    del inventory[item_id]
+    return {"Success": "item deleted!"}
