@@ -4,4 +4,4 @@ server = FastAPI()
 
 @server.get("/")
 def home(): 
-    return {"Data": "test"}
+    return {"Data": "testing"}
