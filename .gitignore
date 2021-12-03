@@ -47,3 +47,4 @@
 #PYTHON IGNORE
 __pycache__
 *.pyc
+venv
