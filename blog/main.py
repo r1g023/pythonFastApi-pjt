@@ -3,6 +3,7 @@ from . import schemas, models
 from .database import SessionLocal, engine
 from sqlalchemy.orm import Session
 
+# schemas
 
 app = FastAPI()
 
@@ -18,9 +19,15 @@ def get_db():
 
 
 @app.post("/blog")
-def create(request: schemas.Blog, db: Session = Depends(get_db)):
-    new_blog = models.Blog(title=request.title, body=request.body)
+def create(blog_request: schemas.Blog, db: Session = Depends(get_db)):
+    new_blog = models.Blog(title=blog_request.title, body=blog_request.body)
     db.add(new_blog)
     db.commit()
     db.refresh(new_blog)
     return new_blog
+
+
+@app.get("/blog")
+def getBlogs(db: Session = Depends(get_db)):  # database instance
+    blogs = db.query(models.Blog).all()
+    return blogs
