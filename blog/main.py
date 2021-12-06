@@ -1,10 +1,13 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Response
-from . import schemas, models
+from typing import List
+from . import schemas, models, hashing
 from .database import SessionLocal, engine
 from sqlalchemy.orm import Session
 
-# schemas
+# from passlib.context import CryptContext
 
+
+# schemas
 app = FastAPI()
 
 models.Base.metadata.create_all(bind=engine)
@@ -19,17 +22,16 @@ def get_db():
 
 
 # GET blogs
-@app.get("/api/blogs")
+@app.get("/api/blogs", response_model=List[schemas.ShowBlog])
 def getBlogs(db: Session = Depends(get_db)):  # database instance
     blogs = db.query(models.Blog).all()
-    if blogs:
-        return blogs
-    else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no users in DB")
+    if not blogs:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no blogs in DB")
+    return blogs
 
 
-# GET blog/id
-@app.get("/api/blogs/{id}")
+# GET /api/blog/id
+@app.get("/api/blogs/{id}", response_model=schemas.ShowBlog)
 def blogID(id: int, response: Response, db: Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id == id).first()
     if not blog:
@@ -71,3 +73,36 @@ def updateBlog(id, request_blog: schemas.Blog, db: Session = Depends(get_db)):
     blog.update(dict(request_blog))
     db.commit()
     return "Updated Blog"
+
+
+# pwd_cxt = CryptContext(schemes=["bcrypt"], deprecated="auto")
+###USER PATHS
+# POST /api/users
+@app.post("/api/user", response_model=schemas.ShowUser)  # pydantic model
+def create_user(request_user: schemas.User, db: Session = Depends(get_db)):
+    # hashedPassword = pwd_cxt.hash(request_user.password)
+    new_user = models.User(
+        name=request_user.name, email=request_user.email, password=hashing.Hash.bcrypt(request_user.password)
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
+
+
+# GET /api/users
+@app.get("/api/users", response_model=List[schemas.ShowUser])
+def getUsers(db: Session = Depends(get_db)):
+    users = db.query(models.User).all()
+    if not users:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no users in DB")
+    return users
+
+
+# GET /api/users/:id
+@app.get("/api/users/{id}", response_model=schemas.ShowUser)
+def getUserId(id: int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no users in DB")
+    return user
