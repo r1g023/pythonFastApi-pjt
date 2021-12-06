@@ -50,10 +50,23 @@ def create(blog_request: schemas.Blog, db: Session = Depends(get_db)):
 
 
 # DELETE /api/blog/id
-@app.delete("/blog/{id}")
+@app.delete("/api/blog/{id}")
 def destroy(id: int, db: Session = Depends(get_db)):
     db.query(models.Blog).filter(models.Blog.id == id).delete(synchronize_session=False)
     db.commit()
-    if db.commit():
-        return True
-    raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="blog of id {id} deleted")
+    return "deleted"
+
+
+# UPDATE /api/blog/id
+@app.put("/api/blog/{id}", status_code=status.HTTP_202_ACCEPTED)
+def updateBlog(id, request: schemas.Blog, db: Session = Depends(get_db)):
+    # or update by dic(request) or request.dict()
+    db.query(models.Blog).filter(models.Blog.id == id).update({"title": request.title, "body": request.body})
+    db.commit()
+
+    # if not blog.first():
+    #     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Blog with id {id} not found")
+    # blog.update(request_blog)
+    # db.commit()
+    # return "Updated Blog"
+    return "updated title"
