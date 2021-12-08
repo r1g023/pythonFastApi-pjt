@@ -42,3 +42,9 @@ class ShowBlog(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+# LOGIN model
+class Login(BaseModel):
+    username: str
+    password: str
