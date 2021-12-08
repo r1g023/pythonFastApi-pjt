@@ -5,6 +5,8 @@ from .. import models, schemas
 # GET /api/blogs
 def get_all(db: Session):
     blogs = db.query(models.Blog).all()
+    if not blogs:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no users in db")
     return blogs
 
 
