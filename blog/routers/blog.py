@@ -20,7 +20,7 @@ def blogID(id: int, db: Session = Depends(database.get_db)):
     return blog.getById(id, db)
 
 
-# POST /api/blogs
+# POST /api/blogs -
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create(blog_request: schemas.Blog, db: Session = Depends(database.get_db)):
     return blog.create(blog_request, db)  # GET FROM REPOSITORY folder
